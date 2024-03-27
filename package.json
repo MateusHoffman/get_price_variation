@@ -1,0 +1,8 @@
+{
+  "name": "get_price_variation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:MateusHoffman/get_price_variation.git",
+  "author": "Hoffman <mateus.hsilva@muu.agr.br>",
+  "license": "MIT"
+}
