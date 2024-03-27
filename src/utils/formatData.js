@@ -1,32 +1,26 @@
 import moment from "moment";
 
-export const formatListPrice = (listPrice) => {
-  const listPriceFormatted = listPrice
-    .map((price) => {
-      return {
-        price: price.price,
-        data: moment(price.date, "DD/MM/YY HH:mm").format("DD/MM/YYYY"),
-        timestamp: moment(price.date, "DD/MM/YY HH:mm").valueOf(),
-      };
-    })
+export const formatListPrice = (listPrice) =>
+  listPrice
+    .map(({ price, date }) => ({
+      price,
+      data: moment(date, "DD/MM/YY HH:mm").format("DD/MM/YYYY"),
+      timestamp: moment(date, "DD/MM/YY HH:mm").valueOf(),
+    }))
     .sort((a, b) => b.timestamp - a.timestamp);
-  return listPriceFormatted;
-};
 
 export function getListVariation(array, periodo) {
-  const variacoes = [];
-
-  for (let i = 0; i < array.length - periodo + 1; i++) {
-    let soma = 0;
-    for (let j = 0; j < periodo; j++) {
-      soma += array[i + j].price;
-    }
-    const media = soma / periodo;
-    const variacao = (media - array[i].price) / array[i].price; // Calcula a variação
-    variacoes.push(variacao);
-  }
-
-  return variacoes;
+  return array
+    .slice(0, -periodo + 1)
+    .map(
+      (_, i) =>
+        (array
+          .slice(i, i + periodo)
+          .reduce((acc, { price }) => acc + price, 0) /
+          periodo -
+          array[i].price) /
+        array[i].price
+    );
 }
 
 export function keepMostFrequentElements(array, percentile) {
@@ -40,5 +34,5 @@ export function keepMostFrequentElements(array, percentile) {
   // Remove the elements
   const resultArray = sortedArray.slice(lowerCount, array.length - upperCount);
 
-  return resultArray.map(n => Math.ceil(n * 100 * 100) / 100);
+  return resultArray.map((n) => Math.ceil(n * 100 * 100) / 100);
 }

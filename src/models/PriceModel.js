@@ -27,6 +27,5 @@ export const getAllPriceByTicker = async (ticker) => {
   const body = formData
 
   const response = await fetchAPI(url, { method, headers, body })
-  // console.log(response)
   return (response && response.data && response.data[0]) ? response.data[0].prices : []
 }
