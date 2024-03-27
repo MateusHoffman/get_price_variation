@@ -4,5 +4,9 @@
   "main": "index.js",
   "repository": "git@github.com:MateusHoffman/get_price_variation.git",
   "author": "Hoffman <mateus.hsilva@muu.agr.br>",
-  "license": "MIT"
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "moment": "^2.30.1"
+  }
 }
