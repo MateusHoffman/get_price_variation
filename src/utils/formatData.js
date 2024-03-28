@@ -36,3 +36,10 @@ export function keepMostFrequentElements(array, percentile) {
 
   return resultArray.map((n) => Math.ceil(n * 100 * 100) / 100);
 }
+
+export const messageGenerator = (config, value) => {
+  const verb = value >= 0 ? "valoriza" : "desvaloriza";
+  const options = value >= 0 ? "CALL" : "PUT";
+  const absValue = Math.abs(value);
+  console.log(`${options} - Em apenas ${config.CHANCE_EXERCISED * 100}% das vezes o ativo se ${verb} mais do que ${absValue}% no período de ${config.PERIOD} dias úteis`);
+}
