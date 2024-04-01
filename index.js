@@ -20,7 +20,7 @@ const get_price_variation = async (config) => {
 
 const config = {
   TICKER: "CIEL3",
-  PERIOD: 18,
+  PERIOD: 15,
   CHANCE_EXERCISED: 0.2,
 }
 

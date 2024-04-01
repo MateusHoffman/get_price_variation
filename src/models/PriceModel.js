@@ -4,7 +4,7 @@ export const getAllPriceByTicker = async (ticker) => {
   const currentDate = new Date()
 
   const formattedDateEnd = currentDate.toISOString().split('T')[0];
-  currentDate.setFullYear(currentDate.getFullYear() - 3)
+  currentDate.setFullYear(currentDate.getFullYear() - 99)
   const formattedDateStart = currentDate.toISOString().split('T')[0];
 
   const formData = new URLSearchParams();
