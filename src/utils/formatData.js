@@ -17,7 +17,7 @@ export function getListVariation(array, periodo) {
 
   array.forEach((price, index) => {
     const initialPrice = price
-    const finalPrice = array[index - periodo + 1]
+    const finalPrice = array[index - periodo]
     const variation = ((finalPrice / initialPrice) - 1) * 100
     !isNaN(variation) && variations.push(variation)
   });
