@@ -4,10 +4,13 @@ import { formatListPrice, getListVariation, keepMostFrequentElements, messageGen
 const get_price_variation = async (config) => {
   // OBTER LISTA DE PREÇOS
   const allPrice = await getAllPriceByTicker(config.TICKER)
+  // console.log('allPrice:', allPrice)
   // FORMATAR LISTA DE PREÇOS
   const allPriceFormatted = formatListPrice(allPrice)
+  // console.log('allPriceFormatted:', allPriceFormatted)
   // GERAR LISTA DE VARIAÇÕES
   const listVariation = getListVariation(allPriceFormatted, config.PERIOD)
+  // console.log('listVariation:', listVariation)
   // DELETADO OS VALORES MENOS FREQUENTES
   const mostFrequentElements = keepMostFrequentElements(listVariation, config.CHANCE_EXERCISED)
   // OBTER O MAIOR VALOR RETIRANDO O CHANCE_EXERCISED
@@ -19,9 +22,9 @@ const get_price_variation = async (config) => {
 }
 
 const config = {
-  TICKER: "CIEL3",
-  PERIOD: 15,
-  CHANCE_EXERCISED: 0.2,
+  TICKER: "CMIG4",
+  PERIOD: 13,
+  CHANCE_EXERCISED: 0.3,
 }
 
 get_price_variation(config)
