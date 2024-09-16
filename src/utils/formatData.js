@@ -40,15 +40,21 @@ export function keepMostFrequentElements(array, percentile) {
   return resultArray.map(num => parseFloat(num.toFixed(2)));
 }
 
-export const messageGenerator = (config, value) => {
+export const messageGenerator = (config, period, value, currentPrice) => {
   const verb = value >= 0 ? "valoriza" : "desvaloriza";
   const options = value >= 0 ? "CALL" : "PUT";
   const absValue = Math.abs(value);
+  let valueWithVariation = null
+  if (options === 'CALL') {
+    valueWithVariation = currentPrice + (currentPrice * (absValue/100))
+  } else {
+    valueWithVariation = currentPrice - (currentPrice * (absValue/100))
+  }
   console.log(
     `${options} - Em apenas ${
       config.CHANCE_EXERCISED * 100
     }% das vezes o ativo se ${verb} mais do que ${absValue}% no período de ${
-      config.PERIOD
-    } dias úteis`
+      period
+    } dias úteis - Preço atual ${currentPrice} > ${valueWithVariation}`
   );
 };
