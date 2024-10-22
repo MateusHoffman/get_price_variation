@@ -1,35 +1,191 @@
-import { getAllPriceByTicker } from "./src/models/PriceModel.js"
-import { formatListPrice, getListVariation, keepMostFrequentElements, messageGenerator } from "./src/utils/formatData.js";
-import { calculateBusinessDays } from "./src/utils/utils.js";
+import moment from "moment";
+import "moment-business-days"; // Importa a biblioteca moment-business-days
 
-const get_price_variation = async (config) => {
-  // OBTER LISTA DE PREÇOS
-  const allPrice = await getAllPriceByTicker(config.TICKER)
-  // console.log('allPrice:', allPrice)
-  // FORMATAR LISTA DE PREÇOS
-  const allPriceFormatted = formatListPrice(allPrice)
-  console.log('allPriceFormatted:', allPriceFormatted)
-  const period = calculateBusinessDays(config.START_DATE, config.END_DATE)
-  // GERAR LISTA DE VARIAÇÕES
-  const listVariation = getListVariation(allPriceFormatted, period)
-  // console.log('listVariation:', listVariation)
-  // DELETADO OS VALORES MENOS FREQUENTES
-  const mostFrequentElements = keepMostFrequentElements(listVariation, config.CHANCE_EXERCISED)
-  // PREÇO MAIS RECENTE
-  const currentPrice = allPriceFormatted[0]
-  // OBTER O MAIOR VALOR RETIRANDO O CHANCE_EXERCISED
-  const highest = mostFrequentElements[mostFrequentElements.length - 1]
-  messageGenerator(config, period, highest, currentPrice)
-  // OBTER O MENOR VALOR RETIRANDO O CHANCE_EXERCISED
-  const lower = mostFrequentElements[0]
-  messageGenerator(config, period, lower, currentPrice)
+// Configura o locale para o Brasil
+moment.locale("pt-br");
+
+async function fetchAPI(url, options) {
+  const maxAttempts = 999;
+  const backoffTime = 1000; // 1 segundo
+  let attempt = 0;
+
+  while (attempt < maxAttempts) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        // Lidando com código de status 429
+        if (response.status === 429) {
+          const cooldown = 3000 + attempt * 1000; // 3 segundos + 1 segundo por tentativa
+          await delay(cooldown);
+          attempt++;
+          continue; // Tentar novamente
+        }
+
+        // Lidando com erro de servidor
+        if (response.status >= 500 && attempt === 0) {
+          await delay(backoffTime);
+        }
+
+        throw new Error(`Error on request to ${url}: ${response.statusText}`);
+      }
+    } catch (error) {
+      // Implementa jitter no atraso em caso de erro
+      if (attempt < maxAttempts - 1) {
+        const jitter = Math.random() * 100; // Jitter aleatório entre 0-100ms
+        const delayTime = backoffTime * Math.pow(2, attempt) + jitter;
+        await delay(delayTime);
+      }
+      attempt++;
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${maxAttempts} attempts`);
 }
 
-const config = {
-  TICKER: "CMIG4",
-  START_DATE: '16/09/2024',
-  END_DATE: '18/10/2024',
-  CHANCE_EXERCISED: 0.3,
+// Função para criar um atraso
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchPriceHistory(ticker) {
+  const url = "https://statusinvest.com.br/acao/tickerpricerange";
+  const headers = { "User-Agent": "Mozilla" };
+  const body = new URLSearchParams({
+    ticker,
+    start: "1000-01-01",
+    end: "3000-01-01",
+  });
+
+  const response = await fetchAPI(url, { method: "POST", headers, body });
+  return response?.data[0]?.prices || [];
 }
 
-get_price_variation(config)
+// Cria um objeto com preços em intervalos definidos
+function createPricesObject(pricesArray, diasUteisAnual) {
+  const result = {};
+  const totalElements = pricesArray.length;
+
+  for (let i = 1; i <= Math.ceil(totalElements / diasUteisAnual); i++) {
+    result[i] = pricesArray.slice(0, diasUteisAnual * i); // Usa slice para pegar os primeiros 246 * i elementos
+  }
+
+  return result;
+}
+
+// Calcula a variação percentual entre os preços
+function getListVariation(array, periodo) {
+  const variations = [];
+
+  for (let index = periodo; index < array.length; index++) {
+    const initialPrice = array[index].value; // Preço inicial
+    const finalPrice = array[index - periodo].value; // Preço final
+
+    // Cálculo da variação percentual
+    const variation = ((finalPrice / initialPrice - 1) * 100).toFixed(2); // Arredonda para 2 casas decimais
+
+    // Adiciona a variação ao array se não for NaN
+    if (!isNaN(variation)) {
+      variations.push(parseFloat(variation)); // Converte a string para número
+    }
+  }
+
+  return variations;
+}
+
+// Remove elementos menos frequentes com base em um percentual
+function keepMostFrequentElements(array, percentile) {
+  const sortedArray = array.slice().sort((a, b) => a - b);
+  const lowerCount = Math.ceil(array.length * percentile);
+  const upperCount = Math.ceil(array.length * percentile);
+
+  // Remove os elementos menos frequentes
+  return sortedArray
+    .slice(lowerCount, array.length - upperCount)
+    .map((num) => parseFloat(num.toFixed(2)));
+}
+
+// Calcula a média de um array
+function calcularMedia(array) {
+  if (array.length === 0) {
+    throw new Error("O array não pode estar vazio.");
+  }
+
+  const soma = array.reduce((acc, valor) => acc + valor, 0);
+  return soma / array.length;
+}
+
+// Função principal
+(async () => {
+  const CONFIG = {
+    TICKER: "CMIG4",
+    HOJE: true,
+    DATA_INICIAL: "",
+    DATA_FINAL: "14/11/2024",
+    CHANCE_EXERCICIO: 0.3,
+  };
+
+  const FIXO = {
+    DIAS_UTEIS_ANUAL: 246,
+  };
+
+  const dataInicial = moment(
+    CONFIG.HOJE ? moment().format("DD/MM/YYYY") : CONFIG.DATA_INICIAL,
+    "DD/MM/YYYY"
+  );
+  const dataFinal = moment(CONFIG.DATA_FINAL, "DD/MM/YYYY");
+
+  const diasUteisEntreDatas = dataInicial.businessDiff(dataFinal);
+
+  const pricesData = await fetchPriceHistory(CONFIG.TICKER);
+  const formattedPrices = pricesData
+    .map((e) => ({
+      value: e.price,
+      date: moment(e.date, "DD/MM/YY HH:mm").format("DD/MM/YYYY"),
+      timestamp: moment(e.date, "DD/MM/YY HH:mm").valueOf(),
+    }))
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const pricesObject = createPricesObject(
+    formattedPrices,
+    FIXO.DIAS_UTEIS_ANUAL
+  );
+
+  let arrayHighest = [];
+  let arrayLower = [];
+
+  // Calcula as variações e armazena os elementos mais frequentes
+  for (const key in pricesObject) {
+    const priceArray = pricesObject[key];
+    const listVariation = getListVariation(priceArray, diasUteisEntreDatas);
+
+    const mostFrequentElements = keepMostFrequentElements(
+      listVariation,
+      CONFIG.CHANCE_EXERCICIO
+    );
+
+    if (mostFrequentElements.length) {
+      arrayHighest.push(mostFrequentElements[mostFrequentElements.length - 1]);
+      arrayLower.push(mostFrequentElements[0]);
+    }
+  }
+
+  const avgHighest = calcularMedia(arrayHighest);
+  console.log(
+    `${avgHighest.toFixed(2)} - VENDA DE CALL > O preço atual R$ ${
+      formattedPrices[0].value
+    } NÃO pode SUBIR acima de R$ ${(
+      formattedPrices[0].value *
+      (1 + avgHighest / 100)
+    ).toFixed(2)} `
+  );
+
+  const avgLower = calcularMedia(arrayLower);
+  console.log(
+    `${avgLower.toFixed(2)} - VENDA DE PUT > O preço atual R$ ${
+      formattedPrices[0].value
+    } NÃO pode CAIR abaixo de R$ ${(
+      formattedPrices[0].value *
+      (1 + avgLower / 100)
+    ).toFixed(2)} `
+  );
+})();
