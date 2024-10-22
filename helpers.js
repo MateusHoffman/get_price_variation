@@ -166,19 +166,28 @@ export async function run(CONFIG) {
     formattedPrices[0].value *
     (1 + avgHighest / 100)
   ).toFixed(2);
-  console.log(
-    `${avgHighest.toFixed(
-      2
-    )} - Faça VENDA DE CAL com strike MAIOR OU IGUAL a R$ ${strikeHighest}`
-  );
 
   const avgLower = calcularMedia(arrayLower);
   const strikeLower = (formattedPrices[0].value * (1 + avgLower / 100)).toFixed(
     2
   );
   console.log(
-    `${-avgLower.toFixed(
+    `Faça VENDA DE CAL com strike MAIOR OU IGUAL a R$ ${strikeHighest}`
+  );
+  console.log(
+    `Faça VENDA DE PUT com strike MENOR OU IGUAL a R$ ${strikeLower}`
+  );
+
+  console.log("----------------------------------------------------");
+
+  console.log(
+    `VENDA DE CAL - Período: ${diasUteisEntreDatas} dias uteis - Variação média: ${avgHighest.toFixed(
       2
-    )} - Faça VENDA DE PUT com strike MENOR OU IGUAL a R$ ${strikeLower}`
+    )} `
+  );
+  console.log(
+    `VENDA DE PUT - Período: ${diasUteisEntreDatas} dias uteis - Variação média: ${-avgLower.toFixed(
+      2
+    )} `
   );
 }
