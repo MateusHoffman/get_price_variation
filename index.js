@@ -170,22 +170,23 @@ function calcularMedia(array) {
   }
 
   const avgHighest = calcularMedia(arrayHighest);
+  const strikeHighest = (
+    formattedPrices[0].value *
+    (1 + avgHighest / 100)
+  ).toFixed(2);
   console.log(
-    `${avgHighest.toFixed(2)} - VENDA DE CALL > O preço atual R$ ${
-      formattedPrices[0].value
-    } NÃO pode SUBIR acima de R$ ${(
-      formattedPrices[0].value *
-      (1 + avgHighest / 100)
-    ).toFixed(2)} `
+    `${avgHighest.toFixed(
+      2
+    )} - Faça VENDA DE CAL com strike MAIOR OU IGUAL a R$ ${strikeHighest}`
   );
 
   const avgLower = calcularMedia(arrayLower);
+  const strikeLower = (formattedPrices[0].value * (1 + avgLower / 100)).toFixed(
+    2
+  );
   console.log(
-    `${avgLower.toFixed(2)} - VENDA DE PUT > O preço atual R$ ${
-      formattedPrices[0].value
-    } NÃO pode CAIR abaixo de R$ ${(
-      formattedPrices[0].value *
-      (1 + avgLower / 100)
-    ).toFixed(2)} `
+    `${-avgLower.toFixed(
+      2
+    )} - Faça VENDA DE PUT com strike MENOR OU IGUAL a R$ ${strikeLower}`
   );
 })();
